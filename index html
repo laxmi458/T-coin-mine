@@ -4,19 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TCoin - User App</title>
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        body { background-color: #008000; color: white; }
+        body { background-color: #008000; color: white; font-family: sans-serif; margin: 0; padding: 0; }
         .btn-red { background-color: #ff0000; font-weight: bold; transition: 0.3s; }
-        .glass-card { background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px); border-radius: 12px; }
-        .nav-item { cursor: pointer; text-align: center; flex: 1; }
+        .btn-red:hover { background-color: #cc0000; }
+        .glass-card { background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px); border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); }
+        .nav-item { cursor: pointer; text-align: center; flex: 1; transition: 0.2s; }
+        .nav-item:active { transform: scale(0.9); color: #ff0000; }
     </style>
 </head>
 <body class="pb-24">
 
-    <header class="p-4 flex justify-between items-center sticky top-0 bg-green-900 z-50 border-b border-green-700">
-        <h1 class="text-xl font-black italic text-white">TCOIN</h1>
+    <header class="p-4 flex justify-between items-center sticky top-0 bg-green-900/90 backdrop-blur-md z-50 border-b border-green-700">
+        <h1 class="text-xl font-black italic text-white tracking-tighter">TCOIN</h1>
         <div class="glass-card px-4 py-1 flex items-center gap-2">
             <i class="fas fa-coins text-yellow-400"></i>
             <span id="userBalance" class="font-bold">0.00</span>
@@ -24,13 +27,28 @@
     </header>
 
     <main id="app-view" class="p-4 min-h-screen">
-        </main>
+        <div class="flex justify-center mt-20">
+            <div class="animate-spin h-8 w-8 border-4 border-white border-t-transparent rounded-full"></div>
+        </div>
+    </main>
 
     <nav class="fixed bottom-0 left-0 right-0 bg-black/90 flex justify-around p-3 border-t border-white/10 z-50">
-        <div onclick="navigate('video')" class="nav-item"><i class="fas fa-play text-xl"></i><p class="text-[10px]">Video</p></div>
-        <div onclick="navigate('ads')" class="nav-item"><i class="fas fa-ad text-xl"></i><p class="text-[10px]">Ads</p></div>
-        <div onclick="navigate('apps')" class="nav-item"><i class="fas fa-download text-xl"></i><p class="text-[10px]">Apps</p></div>
-        <div onclick="navigate('profile')" class="nav-item"><i class="fas fa-user text-xl"></i><p class="text-[10px]">Profile</p></div>
+        <div onclick="navigate('video')" class="nav-item">
+            <i class="fas fa-play text-xl"></i>
+            <p class="text-[10px] mt-1">Video</p>
+        </div>
+        <div onclick="navigate('ads')" class="nav-item">
+            <i class="fas fa-ad text-xl"></i>
+            <p class="text-[10px] mt-1">Ads</p>
+        </div>
+        <div onclick="navigate('apps')" class="nav-item">
+            <i class="fas fa-download text-xl"></i>
+            <p class="text-[10px] mt-1">Apps</p>
+        </div>
+        <div onclick="navigate('profile')" class="nav-item">
+            <i class="fas fa-user-circle text-xl"></i>
+            <p class="text-[10px] mt-1">Profile</p>
+        </div>
     </nav>
 
     <script type="module">
@@ -51,41 +69,55 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
+        // গ্লোবাল ফাংশন যাতে HTML বাটন থেকে এক্সেস করা যায়
         window.navigate = async (page) => {
             const view = document.getElementById('app-view');
             view.innerHTML = `<div class="flex justify-center mt-20"><div class="animate-spin h-8 w-8 border-4 border-white border-t-transparent rounded-full"></div></div>`;
 
-            if(page === 'video') {
-                const snap = await getDocs(query(collection(db, "videos"), orderBy("createdAt", "desc")));
-                let html = `<h2 class="text-lg font-bold mb-4 italic">🎥 WATCH & EARN</h2>`;
-                snap.forEach(d => {
-                    const data = d.data();
-                    html += `
-                        <div class="glass-card p-3 mb-3 flex items-center gap-4">
-                            <img src="${data.thumbnail}" class="w-20 h-14 rounded bg-black object-cover">
-                            <div class="flex-1">
-                                <p class="text-sm font-bold uppercase">${data.title}</p>
-                                <button onclick="window.open('${data.url}')" class="btn-red px-4 py-1 rounded text-[10px] mt-2">WATCH NOW</button>
+            try {
+                if(page === 'video' || page === 'ads' || page === 'apps') {
+                    // ডাইনামিক কালেকশন ফেচিং
+                    const snap = await getDocs(query(collection(db, page === 'video' ? 'videos' : page), orderBy("createdAt", "desc")));
+                    let html = `<h2 class="text-lg font-bold mb-4 italic uppercase">🎥 ${page} Section</h2>`;
+                    
+                    if(snap.empty) {
+                        html += `<p class="text-center mt-10 opacity-60">No content available yet.</p>`;
+                    } else {
+                        snap.forEach(d => {
+                            const data = d.data();
+                            html += `
+                                <div class="glass-card p-3 mb-3 flex items-center gap-4 animate-fade-in">
+                                    <img src="${data.thumbnail || 'https://via.placeholder.com/100'}" class="w-20 h-14 rounded bg-black object-cover">
+                                    <div class="flex-1">
+                                        <p class="text-sm font-bold uppercase truncate w-40">${data.title}</p>
+                                        <button onclick="window.open('${data.url}')" class="btn-red px-4 py-1 rounded text-[10px] mt-2 shadow-lg uppercase">Watch/Open</button>
+                                    </div>
+                                </div>`;
+                        });
+                    }
+                    view.innerHTML = html;
+                } 
+                else if(page === 'profile') {
+                    view.innerHTML = `
+                        <div class="glass-card p-8 mt-4 text-center">
+                            <div class="w-20 h-20 bg-red-600 rounded-full mx-auto flex items-center justify-center text-3xl font-bold mb-4 shadow-xl">U</div>
+                            <h2 class="font-bold text-xl">Member Panel</h2>
+                            <p class="text-green-200 text-sm mb-6">Status: Verified</p>
+                            <div class="space-y-4">
+                                <button onclick="alert('Withdraw system coming soon!')" class="w-full btn-red py-4 rounded-xl text-sm tracking-widest shadow-lg">WITHDRAW MONEY</button>
+                                <button onclick="alert('Referral: TCOIN123')" class="w-full border border-white/20 py-4 rounded-xl text-sm">REFER & EARN</button>
                             </div>
                         </div>`;
-                });
-                view.innerHTML = snap.empty ? `<p class="text-center mt-10">No videos available.</p>` : html;
-            } else if(page === 'profile') {
-                view.innerHTML = `
-                    <div class="glass-card p-6 mt-4 text-center">
-                        <div class="w-16 h-16 bg-red-600 rounded-full mx-auto flex items-center justify-center text-xl font-bold mb-4">U</div>
-                        <h2 class="font-bold">Member Dashboard</h2>
-                        <div class="mt-6 space-y-3">
-                            <button class="w-full btn-red py-3 rounded-xl">WITHDRAW MONEY</button>
-                            <button class="w-full border border-white/20 py-3 rounded-xl text-sm">REFER & EARN</button>
-                        </div>
-                    </div>`;
-            } else {
-                view.innerHTML = `<p class="text-center mt-20 opacity-50">Content Updating...</p>`;
+                }
+            } catch (err) {
+                console.error(err);
+                view.innerHTML = `<div class="text-center mt-20"><p class="text-red-400 font-bold">Sync Error!</p><p class="text-xs opacity-50">Please check internet or Firebase Rules.</p></div>`;
             }
         };
 
-        window.onload = () => navigate('video');
+        // প্রথমবার ভিডিও সেকশন লোড করা
+        window.addEventListener('load', () => navigate('video'));
     </script>
 </body>
 </html>
+
