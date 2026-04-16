@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TCoin - User App</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <style>
+        body { background-color: #008000; color: white; font-family: sans-serif; margin: 0; padding: 0; }
+        .btn-red { background-color: #ff0000; font-weight: bold; transition: 0.3s; }
+        .btn-red:hover { background-color: #cc0000; }
+        .glass-card { background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px); border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); }
+        .nav-item { cursor: pointer; text-align: center; flex: 1; transition: 0.2s; }
+        .nav-item:active { transform: scale(0.9); color: #ff0000; }
+    </style>
+</head>
+
+<body class="pb-24">
+
+<header class="p-4 flex justify-between items-center sticky top-0 bg-green-900/90 backdrop-blur-md z-50 border-b border-green-700">
+    <h1 class="text-xl font-black italic text-white tracking-tighter">TCOIN</h1>
+
+    <div class="glass-card px-4 py-1 flex items-center gap-2">
+        <i class="fas fa-coins text-yellow-400"></i>
+        <span id="userBalance" class="font-bold">0.00</span>
+    </div>
+</header>
+
+<!-- 🔥 ADS SECTION (ADDED) -->
+<div class="p-2">
+    <div class="glass-card p-3 text-center text-sm">
+        <p class="mb-2">Sponsored Ads</p>
+
+        <!-- Monetag / Ad script -->
+        <script src="//libtl.com/sdk.js" data-zone="9593552" data-sdk="show_9593552"></script>
+
+    </div>
+</div>
+
+<main id="app-view" class="p-4 min-h-screen">
+    <div class="flex justify-center mt-20">
+        <div class="animate-spin h-8 w-8 border-4 border-white border-t-transparent rounded-full"></div>
+    </div>
+</main>
+
+<nav class="fixed bottom-0 left-0 right-0 bg-black/90 flex justify-around p-3 border-t border-white/10 z-50">
+    <div onclick="navigate('video')" class="nav-item">
+        <i class="fas fa-play text-xl"></i>
+        <p class="text-[10px] mt-1">Video</p>
+    </div>
+
+    <div onclick="navigate('ads')" class="nav-item">
+        <i class="fas fa-ad text-xl"></i>
+        <p class="text-[10px] mt-1">Ads</p>
+    </div>
+
+    <div onclick="navigate('apps')" class="nav-item">
+        <i class="fas fa-download text-xl"></i>
+        <p class="text-[10px] mt-1">Apps</p>
+    </div>
+
+    <div onclick="navigate('profile')" class="nav-item">
+        <i class="fas fa-user-circle text-xl"></i>
+        <p class="text-[10px] mt-1">Profile</p>
+    </div>
+</nav>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyA7JriiGg8ebYIhasc94vZf7y0LEhdLJ0Y",
+    authDomain: "tcoin-9800d.firebaseapp.com",
+    databaseURL: "https://tcoin-9800d-default-rtdb.firebaseio.com",
+    projectId: "tcoin-9800d",
+    storageBucket: "tcoin-9800d.appspot.com",
+    messagingSenderId: "473266283562",
+    appId: "1:473266283562:web:c91bfe33004e63cf074f53"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+window.navigate = async (page) => {
+
+    const view = document.getElementById('app-view');
+
+    view.innerHTML = `
+        <div class="flex justify-center mt-20">
+            <div class="animate-spin h-8 w-8 border-4 border-white border-t-transparent rounded-full"></div>
+        </div>`;
+
+    try {
+
+        if(page === 'video' || page === 'ads' || page === 'apps') {
+
+            const collectionName =
+                page === 'video' ? 'videos' :
+                page === 'ads' ? 'ads' :
+                'apps';
+
+            const snap = await getDocs(collection(db, collectionName));
+
+            let html = `<h2 class="text-lg font-bold mb-4 uppercase">🎥 ${page} Section</h2>`;
+
+            if(snap.empty) {
+                html += `<p class="text-center mt-10 opacity-60">No content available yet.</p>`;
+            } else {
+                snap.forEach(d => {
+                    const data = d.data();
+
+                    html += `
+                        <div class="glass-card p-3 mb-3 flex items-center gap-4">
+                            <img src="${data.thumbnail || 'https://via.placeholder.com/100'}" class="w-20 h-14 rounded object-cover">
+                            <div class="flex-1">
+                                <p class="text-sm font-bold truncate w-40">${data.title || "No Title"}</p>
+                                <button onclick="window.open('${data.url}','_blank')" class="btn-red px-4 py-1 rounded text-[10px] mt-2">
+                                    Open
+                                </button>
+                            </div>
+                        </div>`;
+                });
+            }
+
+            view.innerHTML = html;
+        }
+
+        else if(page === 'profile') {
+
+            view.innerHTML = `
+                <div class="glass-card p-8 mt-4 text-center">
+                    <div class="w-20 h-20 bg-red-600 rounded-full mx-auto flex items-center justify-center text-3xl font-bold mb-4">
+                        U
+                    </div>
+
+                    <h2 class="font-bold text-xl">Member Panel</h2>
+                    <p class="text-green-200 text-sm mb-6">Status: Verified</p>
+
+                    <div class="space-y-4">
+                        <button onclick="alert('Withdraw coming soon')" class="w-full btn-red py-4 rounded-xl text-sm">
+                            WITHDRAW
+                        </button>
+
+                        <button onclick="alert('Referral: TCOIN123')" class="w-full border border-white/20 py-4 rounded-xl text-sm">
+                            REFER & EARN
+                        </button>
+                    </div>
+                </div>`;
+        }
+
+    } catch (err) {
+        console.error(err);
+        view.innerHTML = `
+            <div class="text-center mt-20 text-red-400">
+                <p class="font-bold">Sync Error!</p>
+                <p class="text-xs opacity-60">Check Firebase rules / internet</p>
+            </div>`;
+    }
+};
+
+window.addEventListener('load', () => navigate('video'));
+</script>
+
+</body>
+</html>
